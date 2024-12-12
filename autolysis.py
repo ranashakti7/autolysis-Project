@@ -113,7 +113,8 @@ def time_series_analysis(df, column):
         print(f"Error during time series analysis: {e}")
         return None
 # Function to generate visualizations based on the analyses
-def generate_visualizations(df, outliers=None, time_series_result=None, clustered_df=None):
+# Function to generate visualizations based on the analyses
+def generate_visualizations(df, output_dir, outliers=None, time_series_result=None, clustered_df=None):
     visuals = []
 
     # Correlation Matrix Heatmap
@@ -122,7 +123,7 @@ def generate_visualizations(df, outliers=None, time_series_result=None, clustere
         correlation_matrix = numeric_df.corr()
         plt.figure(figsize=(12, 10))
         sns.heatmap(correlation_matrix, annot=True, cmap="coolwarm", linewidths=0.5)
-        correlation_matrix_path = 'correlation_matrix.png'
+        correlation_matrix_path = os.path.join(output_dir, 'correlation_matrix.png')
         plt.title('Correlation Matrix of All Numerical Variables')
         plt.savefig(correlation_matrix_path)
         plt.close()
@@ -137,7 +138,7 @@ def generate_visualizations(df, outliers=None, time_series_result=None, clustere
         missing_data.plot(kind='bar', color='skyblue')
         plt.title('Missing Values per Column')
         plt.ylabel('Number of Missing Values')
-        missing_values_path = 'missing_values.png'
+        missing_values_path = os.path.join(output_dir, 'missing_values.png')
         plt.savefig(missing_values_path)
         plt.close()
         visuals.append(missing_values_path)
@@ -152,7 +153,7 @@ def generate_visualizations(df, outliers=None, time_series_result=None, clustere
             plt.title('Detected Outliers')
             plt.xlabel('Index')
             plt.ylabel('Values')
-            outliers_path = 'outliers.png'
+            outliers_path = os.path.join(output_dir, 'outliers.png')
             plt.legend()
             plt.savefig(outliers_path)
             plt.close()
@@ -170,7 +171,7 @@ def generate_visualizations(df, outliers=None, time_series_result=None, clustere
             plt.title('Time Series Decomposition')
             plt.xlabel('Time')
             plt.ylabel('Values')
-            time_series_path = 'time_series_analysis.png'
+            time_series_path = os.path.join(output_dir, 'time_series_analysis.png')
             plt.legend()
             plt.savefig(time_series_path)
             plt.close()
@@ -186,7 +187,7 @@ def generate_visualizations(df, outliers=None, time_series_result=None, clustere
             plt.title('Clustering Results')
             plt.xlabel(clustered_df.columns[0])
             plt.ylabel(clustered_df.columns[1])
-            cluster_path = 'cluster_analysis.png'
+            cluster_path = os.path.join(output_dir, 'cluster_analysis.png')
             plt.legend()
             plt.savefig(cluster_path)
             plt.close()
@@ -244,7 +245,7 @@ def create_llm_prompt(summary, visuals):
 
 
 # write_markdown function
-def write_markdown_v2(summary, visuals, insights):
+def write_markdown(summary, visuals, insights, output_dir):
     content = f"""# Dataset Analysis
 
 ## Data Overview
@@ -261,29 +262,20 @@ def write_markdown_v2(summary, visuals, insights):
 ### Missing Values:
 {pd.Series(summary['missing_values']).to_markdown()}
 
-## Analysis
-
-The dataset was analyzed using the following techniques:
-- **Outlier Detection**: Identified data points that deviate significantly from the rest using Isolation Forest.
-- **Clustering**: Grouped the data into clusters using KMeans.
-- **Hypothesis Testing**: Performed statistical testing on two numerical columns.
-- **Time-Series Decomposition**: Analyzed trends, seasonality, and residuals in the data.
-
 ## Insights and Implications
 
 {insights}
 
 ## Visualizations
 
-The following visualizations were created to enhance the understanding of the data and the findings:
+The following visualizations were created to enhance the understanding of the data:
 """
     for visual in visuals:
-        content += f"![Visualization]({visual})\n\n"
+        content += f"![Visualization]({os.path.basename(visual)})\n\n"
 
-    with open("README.md", "w") as f:
+    readme_path = os.path.join(output_dir, "README.md")
+    with open(readme_path, "w") as f:
         f.write(content)
-
-
 # Main execution flow with the revised approach
 def main_v2():
     if len(sys.argv) != 2:
@@ -291,6 +283,11 @@ def main_v2():
         sys.exit(1)
 
     dataset_path = sys.argv[1]
+    dataset_name = os.path.splitext(os.path.basename(dataset_path))[0]  # Extract dataset name
+
+    # Create a directory for the dataset outputs
+    output_dir = os.path.join(os.getcwd(), dataset_name)
+    os.makedirs(output_dir, exist_ok=True)
 
     # Load and summarize the dataset
     df, summary = load_and_summarize_csv(dataset_path)
@@ -322,12 +319,12 @@ def main_v2():
     insights = query_llm(prompt)
 
    # Generate visualizations
-    visuals = generate_visualizations(df, outliers=outliers, time_series_result= summary['time_series_analysis'], clustered_df=clustered_df)
+    visuals = generate_visualizations(df, output_dir=output_dir, outliers=outliers, time_series_result= summary['time_series_analysis'], clustered_df=clustered_df)
 
     # Write results to Markdown
-    write_markdown_v2(summary, visuals, insights)
+    write_markdown(summary, visuals, insights, output_dir)
 
-    print("Analysis complete. Output saved to README.md and visualization files.")
+    print(f"Analysis complete. Outputs saved in {output_dir}")
 
 if __name__ == "__main__":
     main_v2()

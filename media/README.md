@@ -44,52 +44,36 @@
 | quality       |   0 |
 | repeatability |   0 |
 
-## Analysis
-
-The dataset was analyzed using the following techniques:
-- **Outlier Detection**: Identified data points that deviate significantly from the rest using Isolation Forest.
-- **Clustering**: Grouped the data into clusters using KMeans.
-- **Hypothesis Testing**: Performed statistical testing on two numerical columns.
-- **Time-Series Decomposition**: Analyzed trends, seasonality, and residuals in the data.
-
 ## Insights and Implications
 
-### Actionable Insights from Dataset Analysis
+Based on the analysis performed on the dataset, several actionable insights can be derived. Here, I will summarize relevant correlations, anomalies, patterns, and potential trends for future exploration or business decisions.
 
-Based on the comprehensive analysis carried out on the dataset, several key insights have emerged across various dimensions, including correlations, outliers, patterns, and seasonality. These insights can drive future data exploration and inform strategic business decisions.
+### 1. Insights on Correlations Between Variables:
+The correlation matrix shows the following key relationships among the numerical features:
+- **Overall and Quality (0.83)**: There is a strong positive correlation between overall ratings and quality ratings, suggesting that as the overall rating increases, so does quality. This implies that reviewers tend to rate both attributes similarly.
+- **Overall and Repeatability (0.51)**: There is a moderate positive correlation, indicating while most high overall scores correlate with higher repeatability scores, it isn't as strong as overall vs. quality.
+- **Quality and Repeatability (0.31)**: The relationship is weak but still positive, indicating that higher quality ratings may lead to some increases in repeatability.
 
-#### Insights on Correlations
+### 2. Outliers Detected and Their Possible Implications:
+A total of **116 outliers** were detected, which may indicate extreme ratings or errors in data entry. Examining these outliers can provide insights into anomalies in reviewer behavior or specific titles that received atypical scores:
+- **Actionable Steps**: Review the data points classified as outliers to determine if they are due to data entry errors or if they highlight unique anecdotal cases, such as particularly polarizing films or shows that require additional focus in marketing or product development.
 
-1. **Strong Correlation Between Overall and Quality**: 
-    - The correlation coefficient between `overall` and `quality` is approximately **0.83**, indicating a strong positive relationship. This suggests that as the quality rating increases, the overall rating tends to increase as well.
-    - **Implication**: Businesses may focus on improving the quality of their offerings as a means to enhance overall satisfaction.
+### 3. Significant Clusters Discovered through KMeans:
+KMeans clustering can often unearth significant patterns in the data:
+- **Identified Clusters**: While exact characteristics of the clusters are not provided, they may represent different genres/types of titles (like movies vs. series) or distinct rating patterns (e.g., high quality/low repeatability vs. low quality/high repeatability).
+- **Actionable Insights**: Understanding these clusters could help tailor marketing strategies or content recommendations based on viewer preferences and feedback.
 
-2. **Moderate Correlation with Repeatability**:
-    - The correlation between `overall` and `repeatability` is **0.51**, which indicates that higher repeatability ratings moderately align with overall ratings.
-    - **Implication**: This encourages businesses to ensure consistent quality in their offerings to sustain customer satisfaction.
+### 4. Results from Hypothesis Testing:
+Assuming inference tests were conducted on key metrics:
+- Tests may have indicated if there were statistically significant differences in quality ratings across different languages or types of content. These results could drive changes in content localization or international marketing strategies.
 
-3. **Quality vs. Repeatability**:
-    - The correlation between `quality` and `repeatability` is lower (**0.31**), suggesting that even when the quality is high, it may not always lead to repeatable experiences.
-    - **Implication**: Companies might need to investigate why repeatability does not reflect their quality scores to improve customer retention.
-
-#### Outlier Detection and Implications
-
-- **116 Outliers Detected**: Outliers can skew the dataset and affect analyses, particularly for average measures like mean and standard deviation.
-    - **Implication**: Investigating these outliers is necessary to understand potential anomalies in performance or data entry errors. They could represent exceptional cases that either highlight best practices or signal areas needing attention.
-
-#### Significant Clusters from KMeans Analysis
-
-- **Identification of Clusters**: The KMeans clustering algorithm revealed distinct customer segments based on `overall`, `quality`, and `repeatability` ratings.
-    - **Cluster Insights**: One potential cluster may represent satisfied customers who rate all three dimensions highly, while another could show dissatisfied customers with lower ratings.
-    - **Implication**: Understanding these clusters aids targeting strategies in marketing, allowing companies to tailor communications and product improvements based on customer satisfaction levels.
-
-#### Results from Hypothesis Testing
-
-- Hypothesis tests can determine if the observed differences in ratings (e.g., `overall`, `quality`, `repeatability`) across different `languages
+### 5. Key Findings from Time-Series Decomposition:
+- The **seasonal component** shows various fluctuations, suggesting certain trends or cycles in the dataset over time.
+- With `trend` and `residual`
 
 ## Visualizations
 
-The following visualizations were created to enhance the understanding of the data and the findings:
+The following visualizations were created to enhance the understanding of the data:
 ![Visualization](correlation_matrix.png)
 
 ![Visualization](missing_values.png)
