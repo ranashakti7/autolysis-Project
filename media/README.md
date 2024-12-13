@@ -1,43 +1,102 @@
-# Analysis Report
+# Dataset Analysis
 
-## Dataset Overview
+## Data Overview
 
-Columns: date, language, type, title, by, overall, quality, repeatability
+### Shape of Dataset:
+(2652, 8)
 
-## Analysis Summary
+### Columns and Types:
+{
+  "date": "object",
+  "language": "object",
+  "type": "object",
+  "title": "object",
+  "by": "object",
+  "overall": "int64",
+  "quality": "int64",
+  "repeatability": "int64"
+}
 
-The dataset comprises 2,652 entries highlighting various attributes, including metadata about films or media segments. Here are the key insights and patterns derived from the analysis:
+### Summary Statistics:
+|        | date      | language   | type   | title             | by                | overall            | quality            | repeatability      |
+|:-------|:----------|:-----------|:-------|:------------------|:------------------|:-------------------|:-------------------|:-------------------|
+| count  | 2553      | 2652       | 2652   | 2652              | 2390              | 2652.0             | 2652.0             | 2652.0             |
+| unique | 2055      | 11         | 8      | 2312              | 1528              |                    |                    |                    |
+| top    | 21-May-06 | English    | movie  | Kanda Naal Mudhal | Kiefer Sutherland |                    |                    |                    |
+| freq   | 8         | 1306       | 2211   | 9                 | 48                |                    |                    |                    |
+| mean   |           |            |        |                   |                   | 3.0475113122171944 | 3.2092760180995477 | 1.4947209653092006 |
+| std    |           |            |        |                   |                   | 0.7621797580962717 | 0.7967426636666686 | 0.598289430580212  |
+| min    |           |            |        |                   |                   | 1.0                | 1.0                | 1.0                |
+| 25%    |           |            |        |                   |                   | 3.0                | 3.0                | 1.0                |
+| 50%    |           |            |        |                   |                   | 3.0                | 3.0                | 1.0                |
+| 75%    |           |            |        |                   |                   | 3.0                | 4.0                | 2.0                |
+| max    |           |            |        |                   |                   | 5.0                | 5.0                | 3.0                |
 
-1. **Data Composition**: 
-   - The dataset features entries recorded over a significant time span, with 2,055 unique dates, emphasizing a diverse historical representation. However, 3.73% of the date entries have missing values, which may require attention for analysis that involves time-related trends.
-   - The dataset is dominated by the English language (49.04% of entries) and primarily consists of movies (83.49%), suggesting a focus on English-language films.
+### Missing Values:
+|               |   0 |
+|:--------------|----:|
+| date          |  99 |
+| language      |   0 |
+| type          |   0 |
+| title         |   0 |
+| by            | 262 |
+| overall       |   0 |
+| quality       |   0 |
+| repeatability |   0 |
 
-2. **Entries and Authors**:
-   - A total of 2,312 unique titles and 1,528 unique contributors ('by' field) indicate a rich variety of content and creative input.
-   - Notably, the title "Kanda Naal Mudhal" appears to be the most frequent, indicating either a popular choice for data inclusion or possibly a significant work in the dataset's context.
+## Analysis
 
-3. **Quality Metrics**:
-   - Quality, overall ratings, and repeatability have been systematically analyzed. The correlations suggest a strong relationship between overall ratings and quality (0.83), implying that higher quality typically coincides with better overall reception.
-   - Repeatability presents a moderate correlation with overall ratings (0.51) but seems less relevant when compared to quality. This indicates quality factors more prominently influence the audience's perceptions than how consistent a title may be considered.
+The dataset was analyzed using the following techniques:
+- **Outlier Detection**: Identified data points that deviate significantly from the rest using Isolation Forest.
+- **Clustering**: Grouped the data into clusters using KMeans.
+- **Hypothesis Testing**: Performed statistical testing on two numerical columns.
+- **Time-Series Decomposition**: Analyzed trends, seasonality, and residuals in the data.
 
-4. **Missing Values**:
-   - The analysis revealed missing values predominantly in the 'by' field (9.88%) which may hinder a complete understanding of authorship and contributions.
+## Insights and Implications
 
-5. **Feature Importance**:
-   - Quality emerged as the most significant predictor of overall rating (55.70%), while repeatability holds lesser importance (17.53%). This suggests that improving perceived quality could substantially elevate overall ratings.
+### Actionable Insights from Data Analysis
 
-6. **Statistical Characteristics**: 
-   - Skewness and kurtosis values for overall ratings are relatively low, indicating a normal distribution of the data — which is favorable for predictive modeling.
-   - Outliers noted in overall ratings (1,216 occurrences) may require further investigation, as they could skew the analysis or suggest particularly high or low-rated entries.
+Based on the analysis of the dataset, several insights can be derived regarding correlations, outliers, clusters, and trends. Here are the highlights:
 
-7. **Clustering Patterns**:
-   - The analysis of cluster labels indicates the existence of distinct groupings within the dataset, which may reflect varying types or genres of
+#### 1. Correlation Insights
+
+- **Strong Correlation Between Overall and Quality**: The correlation coefficient of 0.83 suggests a strong relationship between the overall ratings and quality scores. This implies that as the quality rating improves, so does the overall rating. Businesses should focus on quality improvement as it directly impacts customer satisfaction.
+
+- **Moderate Correlation Between Overall and Repeatability**: The correlation of 0.51 indicates a moderate relationship between overall satisfaction and repeatability. This suggests that having a repeatable experience may contribute positively to the overall perception of the dataset's subjects (e.g., movies, products). 
+
+- **Quality vs. Repeatability Weak Correlation**: The weak correlation (0.31) indicates that although quality impacts overall satisfaction, it does not significantly affect repeatability. This might suggest that consumers can find value in the content even if the quality varies.
+
+#### 2. Outliers Detected
+
+- **116 Outliers**: The presence of outliers could be significant in understanding anomalies or exceptional cases that deviate from the norm in ratings. 
+  - **Implications**:
+    - Investigate these outliers to understand their characteristics and whether they are due to a unique content quality or perhaps fraudulent reviews.
+    - Cleaning the dataset by assessing whether to keep or remove outliers could provide more robustness to any predictive modeling approaches.
+
+#### 3. Clustering Insights
+
+- **Significant Clusters from KMeans**: Depending on how many clusters were generated, finding distinct groups in the data may reveal particular audiences or trends in content categorization.
+  - **Recommendations**: Visual outputs (like scatter plots or cluster centers) should be employed to better understand these groups and strategize targeted marketing or content creation tailored to these distinct segments.
+
+#### 4. Hypothesis Testing Results
+
+- **Statistical Significance**: If hypothesis tests were undertaken on the means of overall ratings across different languages or types, significant differences could indicate preferences that businesses may exploit for targeted campaigns. Ensure to report p-values and confidence intervals for any statistical claims.
+
+#### 5. Time-Series Analysis Findings
+
+- **Seasonal Patterns**: The seasonal decomposition suggests fluctuations that could indicate popular trends over time or possibly periods of low activity. 
+  - **Recommendation**: Further analyze
 
 ## Visualizations
 
-![correlation_heatmap.png](correlation_heatmap.png)
+The following visualizations were created to enhance the understanding of the data and the findings:
+![Visualization](correlation_matrix.png)
 
-![missing_values_bar.png](missing_values_bar.png)
+![Visualization](missing_values.png)
 
-![outlier_boxplot.png](outlier_boxplot.png)
+![Visualization](outliers.png)
+
+![Visualization](time_series_analysis.png)
+
+![Visualization](cluster_analysis.png)
 
