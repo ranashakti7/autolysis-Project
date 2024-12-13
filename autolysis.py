@@ -4,58 +4,29 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import requests
-import json
-from sklearn.ensemble import IsolationForest
+from sklearn.linear_model import LinearRegression
+from sklearn.feature_selection import mutual_info_regression
 from sklearn.cluster import KMeans
-from sklearn.decomposition import PCA
-from sklearn.model_selection import cross_val_score
-from scipy.stats import ttest_ind
+import numpy as np
 from statsmodels.tsa.seasonal import seasonal_decompose
+import json
 
-# Setup AI Proxy API
+# Load environment variables
 API_URL = "https://aiproxy.sanand.workers.dev/openai/v1/chat/completions"
 API_TOKEN = os.getenv("AIPROXY_TOKEN")
 
-# Function to load and summarize CSV file
-def load_and_summarize_csv(file_path):
+# Ensure API token is set
+if not API_TOKEN:
+    print("Error: AIPROXY_TOKEN environment variable not set.")
+    sys.exit(1)
+
+def load_dataset(filename):
     try:
-        df = pd.read_csv(file_path, encoding='unicode_escape')
-        summary = {
-            "shape": df.shape,
-            "columns": df.columns.tolist(),
-            "types": df.dtypes.astype(str).to_dict(),
-            "summary_statistics": df.describe(include='all').fillna('').to_dict(),
-            "missing_values": df.isnull().sum().to_dict(),
-            "unique_values": {col: df[col].nunique() for col in df.columns},
-            "most_frequent_values": {col: df[col].mode().iloc[0] if not df[col].mode().empty else None for col in df.columns},
-        }
-        if len(df.select_dtypes(include=['number']).columns) > 1:
-            summary["correlation_matrix"] = df.select_dtypes(include=['number']).corr().to_dict()
-        return df, summary
+        return pd.read_csv(filename, encoding='unicode_escape')
     except Exception as e:
-        print(f"Error loading CSV file: {e}")
+        print(f"Error loading dataset: {e}")
         sys.exit(1)
 
-# Function to dynamically interact with the language model
-def query_llm(prompt):
-    try:
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {API_TOKEN}"
-        }
-        payload = {
-            "model": "gpt-4o-mini",
-            "messages": [{"role": "user", "content": prompt}],
-            "max_tokens": 500
-        }
-        response = requests.post(API_URL, headers=headers, data=json.dumps(payload))
-        response.raise_for_status()
-        return response.json()['choices'][0]['message']['content'].strip()
-    except Exception as e:
-        print(f"Error querying the language model: {e}")
-        sys.exit(1)
-
-# Function to preprocess the dataset
 def preprocess_dataset(df):
     try:
         numeric_df = df.select_dtypes(include=['number']).dropna()
@@ -64,267 +35,268 @@ def preprocess_dataset(df):
         print(f"Error during preprocessing: {e}")
         sys.exit(1)
 
-# Function for missing data analysis
-def analyze_missing_data(df):
-    return df.isnull().sum().to_dict()
+def analyze_data(df):
+    # Convert numeric columns safely
+    numeric_df = preprocess_dataset(df)
 
-# Function for outlier detection
-def detect_outliers(df):
+    analysis = {
+        "summary_statistics": df.describe(include='all').to_dict(),
+        "missing_values": df.isnull().sum().to_dict(),
+        "correlation_matrix": numeric_df.corr().to_dict(),
+    }
+
+    # Outlier Detection
     try:
-        numeric_df = preprocess_dataset(df)
-        iso = IsolationForest(contamination=0.05, random_state=42)
-        numeric_df['outliers'] = iso.fit_predict(numeric_df)
-        return numeric_df[numeric_df['outliers'] == -1], numeric_df[numeric_df['outliers'] == 1]
+        numeric_df = numeric_df.dropna()  # Drop rows with NaN
+        Q1 = numeric_df.quantile(0.25)
+        Q3 = numeric_df.quantile(0.75)
+        IQR = Q3 - Q1
+        outliers = ((numeric_df < (Q1 - 1.5 * IQR)) | (numeric_df > (Q3 + 1.5 * IQR))).sum().to_dict()
+        analysis["outliers"] = outliers
     except Exception as e:
-        print(f"Error detecting outliers: {e}")
-        return None, None
+        analysis["outliers"] = f"Error in outlier detection: {e}"
 
-# Function for clustering
-def perform_clustering(df, n_clusters=3):
+    # Data Type Counts
+    analysis["data_types"] = df.dtypes.value_counts().to_dict()
+
+    # Unique Value Counts
+    analysis["unique_values"] = {col: df[col].nunique() for col in df.columns}
+
+    # Frequent Value Analysis
+    analysis["most_frequent_values"] = {col: df[col].mode()[0] if not df[col].mode().empty else None for col in df.columns}
+
+    # Pairwise Correlation for Top 5 Pairs
     try:
-        numeric_df = preprocess_dataset(df)
-        kmeans = KMeans(n_clusters=n_clusters, random_state=42)
-        numeric_df['cluster'] = kmeans.fit_predict(numeric_df)
-        return numeric_df
+        corr = numeric_df.corr().unstack().sort_values(ascending=False)
+        corr = corr[corr < 1].drop_duplicates()  # Exclude self-correlation
+        analysis["top_correlations"] = corr.head(5).to_dict()
     except Exception as e:
-        print(f"Error performing clustering: {e}")
-        return df
+        analysis["top_correlations"] = f"Error in correlation analysis: {e}"
 
-# Function for hypothesis testing
-def hypothesis_testing(df, column1, column2):
+    # Skewness and Kurtosis
+    analysis["skewness"] = numeric_df.skew().to_dict()
+    analysis["kurtosis"] = numeric_df.kurtosis().to_dict()
+
+    # Null Percentage
+    total_rows = len(df)
+    analysis["null_percentage"] = {col: (df[col].isnull().sum() / total_rows) * 100 for col in df.columns}
+
+    # Categorical Distributions
+    top_categorical = df.select_dtypes(include=['object', 'category']).columns[:3]
+    analysis["categorical_distributions"] = {col: df[col].value_counts(normalize=True).to_dict() for col in top_categorical}
+
+    # Regression Analysis
     try:
-        stat, p_value = ttest_ind(df[column1].dropna(), df[column2].dropna())
-        return {"t_statistic": stat, "p_value": p_value}
+        if numeric_df.shape[1] > 1:  # At least two numerical columns
+            X = numeric_df.iloc[:, 1:].dropna()
+            y = numeric_df.iloc[:, 0].dropna()
+            common_indices = X.index.intersection(y.index)
+            X, y = X.loc[common_indices], y.loc[common_indices]
+            model = LinearRegression().fit(X, y)
+            analysis["regression_coefficients"] = dict(zip(X.columns, model.coef_))
     except Exception as e:
-        print(f"Error performing hypothesis testing: {e}")
-        return None
+        analysis["regression_coefficients"] = f"Error in regression analysis: {e}"
 
-# Function for time series analysis
-def time_series_analysis(df, column):
+    # Feature Importance Analysis
     try:
-        decomposition = seasonal_decompose(df[column], model='additive', period=12)
-        result = {
-            "trend": decomposition.trend,
-            "seasonal": decomposition.seasonal,
-            "residual": decomposition.resid
-        }
-        return result
+        if numeric_df.shape[1] > 1:
+            X = numeric_df.iloc[:, 1:].dropna()
+            y = numeric_df.iloc[:, 0].dropna()
+            common_indices = X.index.intersection(y.index)
+            X, y = X.loc[common_indices], y.loc[common_indices]
+            importances = mutual_info_regression(X, y)
+            analysis["feature_importance"] = dict(zip(X.columns, importances))
     except Exception as e:
-        print(f"Error during time series analysis: {e}")
-        return None
-# Function to generate visualizations based on the analyses
-# Function to generate visualizations based on the analyses
-def generate_visualizations(df, output_dir, outliers=None, time_series_result=None, clustered_df=None):
-    visuals = []
+        analysis["feature_importance"] = f"Error in feature importance analysis: {e}"
 
-    # Correlation Matrix Heatmap
+    # Time Series Analysis
     try:
-        numeric_df = preprocess_dataset(df)
-        correlation_matrix = numeric_df.corr()
-        plt.figure(figsize=(12, 10))
-        sns.heatmap(correlation_matrix, annot=True, cmap="coolwarm", linewidths=0.5)
-        correlation_matrix_path = os.path.join(output_dir, 'correlation_matrix.png')
-        plt.title('Correlation Matrix of All Numerical Variables')
-        plt.savefig(correlation_matrix_path)
+        time_columns = df.select_dtypes(include=['datetime']).columns
+        if not time_columns.empty and not numeric_df.empty:
+            time_series_analysis = {}
+            for time_col in time_columns[:1]:  # Use the first datetime column
+                time_indexed_df = df.set_index(time_col).dropna()
+                for num_col in numeric_df.columns[:1]:  # Use the first numerical column
+                    result = seasonal_decompose(time_indexed_df[num_col], model='additive', period=12)
+                    time_series_analysis[num_col] = {
+                        "trend": result.trend.dropna().to_list(),
+                        "seasonal": result.seasonal.dropna().to_list(),
+                        "residual": result.resid.dropna().to_list(),
+                    }
+            analysis["time_series_decomposition"] = time_series_analysis
+        else:
+            analysis["time_series_decomposition"] = "No suitable columns for time series analysis."
+    except Exception as e:
+        analysis["time_series_decomposition"] = f"Error in time series analysis: {e}"
+
+    # Cluster Analysis
+    try:
+        if numeric_df.shape[1] > 1:
+            kmeans = KMeans(n_clusters=3, random_state=42).fit(numeric_df.dropna())
+            analysis["cluster_labels"] = kmeans.labels_.tolist()
+    except Exception as e:
+        analysis["cluster_labels"] = f"Error in cluster analysis: {e}"
+
+    # Geographic Analysis
+    try:
+        geo_columns = numeric_df.columns
+        if len(geo_columns) >= 2:
+            analysis["geographic_summary"] = {
+                "latitude_range": (numeric_df[geo_columns[0]].min(), numeric_df[geo_columns[0]].max()),
+                "longitude_range": (numeric_df[geo_columns[1]].min(), numeric_df[geo_columns[1]].max()),
+            }
+    except Exception as e:
+        analysis["geographic_summary"] = f"Error in geographic analysis: {e}"
+
+    # Network Analysis
+    try:
+        network_columns = df.columns[df.columns.str.contains("source|target", case=False)]
+        if len(network_columns) == 2:
+            network_edges = df[network_columns].dropna()
+            analysis["network_connections"] = network_edges.values.tolist()
+    except Exception as e:
+        analysis["network_connections"] = f"Error in network analysis: {e}"
+
+    return analysis
+
+def generate_visualizations(df):
+    visualizations = []
+
+    # Safe numeric filtering
+    numeric_df = preprocess_dataset(df)
+
+    # Correlation heatmap
+    try:
+        plt.figure(figsize=(10,8))
+        sns.heatmap(numeric_df.corr(), annot=True, cmap="coolwarm")
+        heatmap_file = "correlation_heatmap.png"
+        plt.title("Correlation Heatmap")
+        plt.savefig(heatmap_file)
         plt.close()
-        visuals.append(correlation_matrix_path)
+        visualizations.append(heatmap_file)
     except Exception as e:
-        print(f"Error generating correlation matrix heatmap: {e}")
+        print(f"Error creating correlation heatmap: {e}")
 
-    # Missing Values Visualization
+    # Time Series Decomposition Analysis
     try:
-        missing_data = df.isnull().sum()
-        plt.figure(figsize=(12, 6))
-        missing_data.plot(kind='bar', color='skyblue')
-        plt.title('Missing Values per Column')
-        plt.ylabel('Number of Missing Values')
-        missing_values_path = os.path.join(output_dir, 'missing_values.png')
-        plt.savefig(missing_values_path)
-        plt.close()
-        visuals.append(missing_values_path)
+        time_columns = df.select_dtypes(include=['datetime']).columns
+        if not time_columns.empty:
+            for time_col in time_columns[:1]:  # Use the first datetime column
+                time_indexed_df = df.set_index(time_col).dropna()
+                for num_col in numeric_df.columns[:1]:  # Use the first numeric column
+                    result = seasonal_decompose(time_indexed_df[num_col], model='additive', period=12)
+                    plt.figure(figsize=(10, 8))
+                    result.plot()
+                    time_decomp_file = "time_series_decomposition.png"
+                    plt.savefig(time_decomp_file)
+                    plt.close()
+                    visualizations.append(time_decomp_file)
     except Exception as e:
-        print(f"Error generating missing values bar chart: {e}")
+        print(f"Error in time series decomposition: {e}")
 
-    # Outliers Visualization (if detected)
-    if outliers is not None:
-        try:
-            plt.figure(figsize=(12, 6))
-            plt.scatter(outliers.index, outliers.iloc[:, 0], color='red', label='Outliers')  # Ensure matching sizes
-            plt.title('Detected Outliers')
-            plt.xlabel('Index')
-            plt.ylabel('Values')
-            outliers_path = os.path.join(output_dir, 'outliers.png')
-            plt.legend()
-            plt.savefig(outliers_path)
+    # Bar Graph for Missing Values
+    try:
+        missing_values = df.isnull().sum()
+        if missing_values.any():
+            plt.figure(figsize=(10,8))
+            sns.barplot(x=missing_values.index, y=missing_values.values, hue=missing_values.index, palette="viridis", legend=False)
+            plt.title("Missing Value Counts")
+            plt.ylabel("Count")
+            plt.xticks(rotation=90)
+            missing_values_file = "missing_values_bar.png"
+            plt.savefig(missing_values_file)
             plt.close()
-            visuals.append(outliers_path)
-        except Exception as e:
-            print(f"Error generating outliers scatter plot: {e}")
+            visualizations.append(missing_values_file)
+    except Exception as e:
+        print(f"Error creating missing values bar graph: {e}")
 
-    # Time Series Analysis (if performed)
-    if time_series_result is not None:
-        try:
-            plt.figure(figsize=(12, 6))
-            plt.plot(time_series_result['trend'], label='Trend', color='blue')
-            plt.plot(time_series_result['seasonal'], label='Seasonal', color='orange')
-            plt.plot(time_series_result['residual'], label='Residual', color='green')
-            plt.title('Time Series Decomposition')
-            plt.xlabel('Time')
-            plt.ylabel('Values')
-            time_series_path = os.path.join(output_dir, 'time_series_analysis.png')
-            plt.legend()
-            plt.savefig(time_series_path)
+    # Outlier Detection Visualization (Boxplot)
+    try:
+        if not numeric_df.empty:
+            plt.figure(figsize=(10,8))
+            sns.boxplot(data=numeric_df)
+            plt.title("Outlier Detection - Boxplot")
+            outlier_file = "outlier_boxplot.png"
+            plt.savefig(outlier_file)
             plt.close()
-            visuals.append(time_series_path)
-        except Exception as e:
-            print(f"Error generating time series analysis plot: {e}")
+            visualizations.append(outlier_file)
+    except Exception as e:
+        print(f"Error creating boxplot: {e}")
 
-    # Cluster Analysis Visualization
-    if clustered_df is not None:
-        try:
-            plt.figure(figsize=(12, 6))
-            sns.scatterplot(x=clustered_df.iloc[:, 0], y=clustered_df.iloc[:, 1], hue=clustered_df['cluster'], palette='viridis', s=100)
-            plt.title('Clustering Results')
-            plt.xlabel(clustered_df.columns[0])
-            plt.ylabel(clustered_df.columns[1])
-            cluster_path = os.path.join(output_dir, 'cluster_analysis.png')
-            plt.legend()
-            plt.savefig(cluster_path)
-            plt.close()
-            visuals.append(cluster_path)
-        except Exception as e:
-            print(f"Error generating clustering plot: {e}")
+    return visualizations
+import time
 
-    return visuals
-
-#Function to craft context-rich prompts for the LLM
-def create_llm_prompt(summary, visuals):
-    data_description = f"""The dataset contains the following columns and types:
-    {json.dumps(summary['types'], indent=2)}
-
-    Summary statistics of the dataset are:
-    {pd.DataFrame(summary['summary_statistics']).to_markdown()}
-
-    Missing values in the dataset:
-    {pd.Series(summary['missing_values']).to_markdown()}
-
-    Outlier count: {summary.get('outlier_count', 'N/A')}
-    
-    Correlation matrix of numerical features:
-    {json.dumps(summary.get('correlation_matrix', {}))}
-
-    Time series analysis results:
-    {summary.get('time_series_analysis', 'N/A')}
-    
-    The dataset was analyzed using multiple techniques, including:
-    - Outlier detection using Isolation Forest
-    - KMeans clustering for pattern discovery
-    - Hypothesis testing on numerical columns
-    - Time-series decomposition of the first numeric column
-
-    Please provide actionable insights from this analysis. Highlight any interesting correlations, clusters, or trends you find. Additionally, suggest implications for future data exploration or business decisions.
+def query_llm(prompt, max_retries=5, max_tokens=500):
     """
-
-    # Formatting for the Insights
-    insights_prompt = f"""Based on the analysis performed on the dataset, here are some insights:
-    - Insights on correlations between variables
-    - Outliers detected and their possible implications
-    - Significant clusters discovered through KMeans
-    - Results from hypothesis testing (statistical significance)
-    - Key findings from time-series decomposition
-
-    Also, please make sure to:
-    - Include recommendations on data cleaning and potential improvements.
-    - Emphasize the most significant findings with explanations on how they might impact the overall data trends.
-
-    Include visualizations in your analysis to help reinforce key findings.
+    Query the language model with retry and backoff logic to handle rate limits.
     """
+    retries = 0
+    while retries < max_retries:
+        try:
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {API_TOKEN}"
+            }
+            payload = {
+                "model": "gpt-4o-mini",
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": max_tokens
+            }
+            response = requests.post(API_URL, headers=headers, data=json.dumps(payload))
+            response.raise_for_status()
+            return response.json()['choices'][0]['message']['content'].strip()
+        except requests.exceptions.HTTPError as e:
+            if response.status_code == 429:  # Rate limit error
+                wait_time = 2 ** retries  # Exponential backoff
+                print(f"Rate limit hit. Retrying after {wait_time} seconds...")
+                time.sleep(wait_time)
+                retries += 1
+            else:
+                print(f"Error querying the language model: {e}")
+                print(f"Full response: {response.json()}")
+                sys.exit(1)
+        except Exception as e:
+            print(f"Unexpected error querying the language model: {e}")
+            sys.exit(1)
 
-    # Combining both prompts into a final one
-    return data_description + "\n\n" + insights_prompt
+    print("Max retries exceeded. Falling back to local summary generation.")
+    return None  # Return None if retries are exhausted
 
 
-# write_markdown function
-def write_markdown(summary, visuals, insights, output_dir):
-    content = f"""# Dataset Analysis
+def generate_readme(df, analysis, visualizations):
+    """
+    Generate README.md file using LLM or fallback to local generation if LLM fails.
+    """
+    column_names = ", ".join(df.columns)
 
-## Data Overview
+    # Construct a concise prompt using the analysis dictionary
+    analysis_summary = "\n".join([f"{key}: {str(value)[:500]}" for key, value in analysis.items() if value != "Not applicable"])
 
-### Shape of Dataset:
-{summary['shape']}
+    prompt = (
+        f"The dataset has the following columns: {column_names}.\n\n"
+        f"Here is the summarized analysis:\n{analysis_summary}\n\n"
+        "Based on the above analysis, provide a concise narrative explaining the key insights, patterns, and potential implications."
+    )
 
-### Columns and Types:
-{json.dumps(summary['types'], indent=2)}
-
-### Summary Statistics:
-{pd.DataFrame(summary['summary_statistics']).to_markdown()}
-
-### Missing Values:
-{pd.Series(summary['missing_values']).to_markdown()}
-
-## Insights and Implications
-
-{insights}
-
-## Visualizations
-
-The following visualizations were created to enhance the understanding of the data:
-"""
-    for visual in visuals:
-        content += f"![Visualization]({os.path.basename(visual)})\n\n"
-
-    readme_path = os.path.join(output_dir, "README.md")
-    with open(readme_path, "w") as f:
-        f.write(content)
-# Main execution flow with the revised approach
-def main_v2():
-    if len(sys.argv) != 2:
-        print("Usage: python autolysis.py <dataset.csv>")
-        sys.exit(1)
-
-    dataset_path = sys.argv[1]
-    dataset_name = os.path.splitext(os.path.basename(dataset_path))[0]  # Extract dataset name
-
-    # Create a directory for the dataset outputs
-    output_dir = os.path.join(os.getcwd(), dataset_name)
-    os.makedirs(output_dir, exist_ok=True)
-
-    # Load and summarize the dataset
-    df, summary = load_and_summarize_csv(dataset_path)
-
-    # Perform missing data analysis
-    summary['missing_data_analysis'] = analyze_missing_data(df)
-
-    # Detect outliers
-    outliers, inliers = detect_outliers(df)
-    if outliers is not None:
-        summary['outlier_count'] = len(outliers)
-
-    # Perform clustering
-    clustered_df = perform_clustering(df)
-
-    # Hypothesis testing (example on first two numeric columns)
-    numeric_columns = df.select_dtypes(include=['number']).columns
-    if len(numeric_columns) >= 2:
-        col1, col2 = numeric_columns[:2]
-        summary['hypothesis_test'] = hypothesis_testing(df, col1, col2)
-
-    # Time series analysis (example on the first numeric column)
-    if len(numeric_columns) >= 1:
-        time_series_col = numeric_columns[0]
-        summary['time_series_analysis'] = time_series_analysis(df, time_series_col)
-
-    # Query the LLM for insights with the revised prompt
-    prompt = create_llm_prompt(summary, [])
-    insights = query_llm(prompt)
-
-   # Generate visualizations
-    visuals = generate_visualizations(df, output_dir=output_dir, outliers=outliers, time_series_result= summary['time_series_analysis'], clustered_df=clustered_df)
-
-    # Write results to Markdown
-    write_markdown(summary, visuals, insights, output_dir)
-
-    print(f"Analysis complete. Outputs saved in {output_dir}")
+    # Query the LLM for narrative
+    narrative = query_llm(prompt)
+    # Write the README.md file
+    with open("README.md", "w") as readme:
+        readme.write("# Analysis Report\n\n")
+        readme.write(f"## Dataset Overview\n\nColumns: {column_names}\n\n")
+        readme.write(f"## Analysis Summary\n\n{narrative}\n\n")
+        readme.write("## Visualizations\n\n")
+        for vis in visualizations:
+            readme.write(f"![{vis}]({vis})\n\n")
 
 if __name__ == "__main__":
-    main_v2()
+    if len(sys.argv) != 2:
+        print("Usage: uv run autolysis.py <dataset.csv>")
+        sys.exit(1)
+
+    dataset_file = sys.argv[1]
+    data = load_dataset(dataset_file)
+    analysis = analyze_data(data)
+    vis_files = generate_visualizations(data)
+    generate_readme(data, analysis, vis_files)
+    print("Analysis complete. Outputs generated in the current directory.")

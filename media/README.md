@@ -1,86 +1,43 @@
-# Dataset Analysis
+# Analysis Report
 
-## Data Overview
+## Dataset Overview
 
-### Shape of Dataset:
-(2652, 8)
+Columns: date, language, type, title, by, overall, quality, repeatability
 
-### Columns and Types:
-{
-  "date": "object",
-  "language": "object",
-  "type": "object",
-  "title": "object",
-  "by": "object",
-  "overall": "int64",
-  "quality": "int64",
-  "repeatability": "int64"
-}
+## Analysis Summary
 
-### Summary Statistics:
-|        | date      | language   | type   | title             | by                | overall            | quality            | repeatability      |
-|:-------|:----------|:-----------|:-------|:------------------|:------------------|:-------------------|:-------------------|:-------------------|
-| count  | 2553      | 2652       | 2652   | 2652              | 2390              | 2652.0             | 2652.0             | 2652.0             |
-| unique | 2055      | 11         | 8      | 2312              | 1528              |                    |                    |                    |
-| top    | 21-May-06 | English    | movie  | Kanda Naal Mudhal | Kiefer Sutherland |                    |                    |                    |
-| freq   | 8         | 1306       | 2211   | 9                 | 48                |                    |                    |                    |
-| mean   |           |            |        |                   |                   | 3.0475113122171944 | 3.2092760180995477 | 1.4947209653092006 |
-| std    |           |            |        |                   |                   | 0.7621797580962717 | 0.7967426636666686 | 0.598289430580212  |
-| min    |           |            |        |                   |                   | 1.0                | 1.0                | 1.0                |
-| 25%    |           |            |        |                   |                   | 3.0                | 3.0                | 1.0                |
-| 50%    |           |            |        |                   |                   | 3.0                | 3.0                | 1.0                |
-| 75%    |           |            |        |                   |                   | 3.0                | 4.0                | 2.0                |
-| max    |           |            |        |                   |                   | 5.0                | 5.0                | 3.0                |
+The dataset comprises 2,652 entries highlighting various attributes, including metadata about films or media segments. Here are the key insights and patterns derived from the analysis:
 
-### Missing Values:
-|               |   0 |
-|:--------------|----:|
-| date          |  99 |
-| language      |   0 |
-| type          |   0 |
-| title         |   0 |
-| by            | 262 |
-| overall       |   0 |
-| quality       |   0 |
-| repeatability |   0 |
+1. **Data Composition**: 
+   - The dataset features entries recorded over a significant time span, with 2,055 unique dates, emphasizing a diverse historical representation. However, 3.73% of the date entries have missing values, which may require attention for analysis that involves time-related trends.
+   - The dataset is dominated by the English language (49.04% of entries) and primarily consists of movies (83.49%), suggesting a focus on English-language films.
 
-## Insights and Implications
+2. **Entries and Authors**:
+   - A total of 2,312 unique titles and 1,528 unique contributors ('by' field) indicate a rich variety of content and creative input.
+   - Notably, the title "Kanda Naal Mudhal" appears to be the most frequent, indicating either a popular choice for data inclusion or possibly a significant work in the dataset's context.
 
-Based on the analysis performed on the dataset, several actionable insights can be derived. Here, I will summarize relevant correlations, anomalies, patterns, and potential trends for future exploration or business decisions.
+3. **Quality Metrics**:
+   - Quality, overall ratings, and repeatability have been systematically analyzed. The correlations suggest a strong relationship between overall ratings and quality (0.83), implying that higher quality typically coincides with better overall reception.
+   - Repeatability presents a moderate correlation with overall ratings (0.51) but seems less relevant when compared to quality. This indicates quality factors more prominently influence the audience's perceptions than how consistent a title may be considered.
 
-### 1. Insights on Correlations Between Variables:
-The correlation matrix shows the following key relationships among the numerical features:
-- **Overall and Quality (0.83)**: There is a strong positive correlation between overall ratings and quality ratings, suggesting that as the overall rating increases, so does quality. This implies that reviewers tend to rate both attributes similarly.
-- **Overall and Repeatability (0.51)**: There is a moderate positive correlation, indicating while most high overall scores correlate with higher repeatability scores, it isn't as strong as overall vs. quality.
-- **Quality and Repeatability (0.31)**: The relationship is weak but still positive, indicating that higher quality ratings may lead to some increases in repeatability.
+4. **Missing Values**:
+   - The analysis revealed missing values predominantly in the 'by' field (9.88%) which may hinder a complete understanding of authorship and contributions.
 
-### 2. Outliers Detected and Their Possible Implications:
-A total of **116 outliers** were detected, which may indicate extreme ratings or errors in data entry. Examining these outliers can provide insights into anomalies in reviewer behavior or specific titles that received atypical scores:
-- **Actionable Steps**: Review the data points classified as outliers to determine if they are due to data entry errors or if they highlight unique anecdotal cases, such as particularly polarizing films or shows that require additional focus in marketing or product development.
+5. **Feature Importance**:
+   - Quality emerged as the most significant predictor of overall rating (55.70%), while repeatability holds lesser importance (17.53%). This suggests that improving perceived quality could substantially elevate overall ratings.
 
-### 3. Significant Clusters Discovered through KMeans:
-KMeans clustering can often unearth significant patterns in the data:
-- **Identified Clusters**: While exact characteristics of the clusters are not provided, they may represent different genres/types of titles (like movies vs. series) or distinct rating patterns (e.g., high quality/low repeatability vs. low quality/high repeatability).
-- **Actionable Insights**: Understanding these clusters could help tailor marketing strategies or content recommendations based on viewer preferences and feedback.
+6. **Statistical Characteristics**: 
+   - Skewness and kurtosis values for overall ratings are relatively low, indicating a normal distribution of the data — which is favorable for predictive modeling.
+   - Outliers noted in overall ratings (1,216 occurrences) may require further investigation, as they could skew the analysis or suggest particularly high or low-rated entries.
 
-### 4. Results from Hypothesis Testing:
-Assuming inference tests were conducted on key metrics:
-- Tests may have indicated if there were statistically significant differences in quality ratings across different languages or types of content. These results could drive changes in content localization or international marketing strategies.
-
-### 5. Key Findings from Time-Series Decomposition:
-- The **seasonal component** shows various fluctuations, suggesting certain trends or cycles in the dataset over time.
-- With `trend` and `residual`
+7. **Clustering Patterns**:
+   - The analysis of cluster labels indicates the existence of distinct groupings within the dataset, which may reflect varying types or genres of
 
 ## Visualizations
 
-The following visualizations were created to enhance the understanding of the data:
-![Visualization](correlation_matrix.png)
+![correlation_heatmap.png](correlation_heatmap.png)
 
-![Visualization](missing_values.png)
+![missing_values_bar.png](missing_values_bar.png)
 
-![Visualization](outliers.png)
-
-![Visualization](time_series_analysis.png)
-
-![Visualization](cluster_analysis.png)
+![outlier_boxplot.png](outlier_boxplot.png)
 
