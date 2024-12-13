@@ -158,7 +158,6 @@ def analyze_data(df):
         analysis["network_connections"] = f"Error in network analysis: {e}"
 
     return analysis
-
 def generate_visualizations(df):
     visualizations = []
 
@@ -167,45 +166,25 @@ def generate_visualizations(df):
 
     # Correlation heatmap
     try:
-        plt.figure(figsize=(10,8))
-        sns.heatmap(numeric_df.corr(), annot=True, cmap="coolwarm")
         heatmap_file = "correlation_heatmap.png"
-        plt.title("Correlation Heatmap")
-        plt.savefig(heatmap_file)
-        plt.close()
+        heatmap = sns.heatmap(numeric_df.corr(), annot=True, cmap="coolwarm")
+        heatmap.set_title("Correlation Heatmap")
+        heatmap.get_figure().savefig(heatmap_file)  # Save the figure directly
+        heatmap.get_figure().clf()  # Clear the figure
         visualizations.append(heatmap_file)
     except Exception as e:
         print(f"Error creating correlation heatmap: {e}")
-
-    # Time Series Decomposition Analysis
-    try:
-        time_columns = df.select_dtypes(include=['datetime']).columns
-        if not time_columns.empty:
-            for time_col in time_columns[:1]:  # Use the first datetime column
-                time_indexed_df = df.set_index(time_col).dropna()
-                for num_col in numeric_df.columns[:1]:  # Use the first numeric column
-                    result = seasonal_decompose(time_indexed_df[num_col], model='additive', period=12)
-                    plt.figure(figsize=(10, 8))
-                    result.plot()
-                    time_decomp_file = "time_series_decomposition.png"
-                    plt.savefig(time_decomp_file)
-                    plt.close()
-                    visualizations.append(time_decomp_file)
-    except Exception as e:
-        print(f"Error in time series decomposition: {e}")
-
     # Bar Graph for Missing Values
     try:
         missing_values = df.isnull().sum()
         if missing_values.any():
-            plt.figure(figsize=(10,8))
-            sns.barplot(x=missing_values.index, y=missing_values.values, hue=missing_values.index, palette="viridis", legend=False)
-            plt.title("Missing Value Counts")
-            plt.ylabel("Count")
-            plt.xticks(rotation=90)
             missing_values_file = "missing_values_bar.png"
-            plt.savefig(missing_values_file)
-            plt.close()
+            bar = sns.barplot(x=missing_values.index, y=missing_values.values, palette="viridis")
+            bar.set_title("Missing Value Counts")
+            bar.set_ylabel("Count")
+            bar.set_xticklabels(bar.get_xticklabels(), rotation=90)
+            bar.get_figure().savefig(missing_values_file)
+            bar.get_figure().clf()
             visualizations.append(missing_values_file)
     except Exception as e:
         print(f"Error creating missing values bar graph: {e}")
@@ -213,17 +192,17 @@ def generate_visualizations(df):
     # Outlier Detection Visualization (Boxplot)
     try:
         if not numeric_df.empty:
-            plt.figure(figsize=(10,8))
-            sns.boxplot(data=numeric_df)
-            plt.title("Outlier Detection - Boxplot")
             outlier_file = "outlier_boxplot.png"
-            plt.savefig(outlier_file)
-            plt.close()
+            boxplot = sns.boxplot(data=numeric_df)
+            boxplot.set_title("Outlier Detection - Boxplot")
+            boxplot.get_figure().savefig(outlier_file)
+            boxplot.get_figure().clf()
             visualizations.append(outlier_file)
     except Exception as e:
         print(f"Error creating boxplot: {e}")
 
     return visualizations
+
 import time
 
 def query_llm(prompt, max_retries=5, max_tokens=500):
