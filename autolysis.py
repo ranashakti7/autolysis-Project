@@ -1,3 +1,17 @@
+# Required Libraries:
+# - matplotlib: For generating visualizations.
+# - seaborn: For advanced statistical visualizations.
+# - pandas: For data manipulation and analysis.
+# - requests: For making API calls to the AI Proxy server.
+# - json: For working with JSON data (part of Python's standard library).
+# - sklearn: For machine learning operations (IsolationForest, KMeans, etc.).
+#   - sklearn.ensemble: For IsolationForest (outlier detection).
+#   - sklearn.cluster: For KMeans clustering.
+#   - sklearn.decomposition: For PCA (optional clustering-related operations).
+#   - sklearn.model_selection: For cross-validation in machine learning tasks.
+# - scipy: For statistical tests (e.g., `ttest_ind`).
+# - statsmodels: For time series analysis (`seasonal_decompose`).
+# - numpy: For numerical operations and preprocessing.
 import os
 import sys
 import pandas as pd
