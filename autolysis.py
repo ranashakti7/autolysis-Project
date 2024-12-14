@@ -21,7 +21,8 @@ The results are summarized and saved as a Markdown file, accompanied by relevant
 #   "scikit-learn",        # For machine learning operations (IsolationForest, KMeans, etc.).
 #   "scipy",               # For statistical tests (e.g., t-tests).
 #   "statsmodels",         # For time series analysis (e.g., seasonal decomposition).
-#   "tabulate"
+#   "tabulate",
+#   "tenacity"
 # ]
 # ///
 
@@ -31,6 +32,8 @@ The results are summarized and saved as a Markdown file, accompanied by relevant
 import os
 import sys
 import json
+import base64
+from tenacity import retry, wait_exponential, stop_after_attempt
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -94,6 +97,71 @@ def query_llm(prompt):
     except (requests.exceptions.RequestException, KeyError) as e:
         print(f"Error querying the language model: {e}")
         sys.exit(1)
+
+def encode_image(image_path):
+    """
+    Encode an image to base64 format for API transmission.
+
+    Args:
+        image_path (str): The file path of the image.
+
+    Returns:
+        str: Base64 encoded image.
+    """
+    with open(image_path, "rb") as image_file:
+        return base64.b64encode(image_file.read()).decode("utf-8")
+
+@retry(wait=wait_exponential(multiplier=1, min=4, max=10), stop=stop_after_attempt(3))
+
+def analyze_image(image_path, detail="low", timeout=30):
+    """
+    Analyze a single image using the OpenAI Vision API.
+
+    Args:
+        image_path (str): Path to the image file.
+        detail (str): Level of detail ('low' or 'high').
+        timeout (int): Timeout for the API call in seconds.
+
+    Returns:
+        str: Analysis result or error message.
+    """
+    headers = {
+        "Authorization": f"Bearer {API_TOKEN}",
+        "Content-Type": "application/json",
+    }
+    try:
+        # Encode the image
+        encoded_image = encode_image(image_path)
+
+        # Prepare payload
+        payload = {
+            "model": "gpt-4-vision",  # Specify the correct vision-capable model
+            "input": {
+                "image": encoded_image,
+                "detail": detail,
+            },
+            "max_tokens": 300,
+        }
+
+        # Send the POST request with a timeout
+        response = requests.post(
+            url=API_URL,
+            headers=headers,
+            data=json.dumps(payload),
+            timeout=timeout
+        )
+        response.raise_for_status()
+
+        # Return the response content
+        return response.json()["data"]["content"]
+
+    except requests.exceptions.Timeout:
+        return f"Error: Request timed out after {timeout} seconds for image {image_path}."
+    except requests.exceptions.RequestException as e:
+        return f"Error analyzing image {image_path}: {e}"
+    except Exception as e:
+        return f"Unexpected error for image {image_path}: {e}"
+
 # Function to preprocess the dataset
 def preprocess_dataset(df):
     """Filter numeric columns and drop rows with missing values."""
@@ -372,6 +440,7 @@ The dataset was analyzed using the following techniques:
 The following visualizations were created to enhance the understanding of the data and the findings:
 """
     for visual in visuals:
+        content+=analyze_image(visual)
         content += f"![Visualization]({visual})\n\n"
 
     with open("README.md", "w", encoding="utf-8") as f:

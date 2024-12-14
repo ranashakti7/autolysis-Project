@@ -54,46 +54,47 @@ The dataset was analyzed using the following techniques:
 
 ## Insights and Implications
 
-Based on the analysis of the provided dataset, several actionable insights can be derived, along with recommendations for further exploration and potential business decisions. Here’s a comprehensive overview:
+Based on the provided analysis of the dataset, this report outlines actionable insights, correlations, cluster findings, potential implications, and recommendations for further data exploration and future business decisions.
 
-### 1. Insights on Correlations Between Variables
-- **Strong Correlations**: 
-  - The correlation between `overall` and `quality` (0.826) indicates a significant relationship, suggesting that movies rated higher in quality also tend to score higher overall.
-  - There is a moderate correlation between `overall` and `repeatability` (0.513), implying that movies perceived as more repeatable might also score better overall.
-  
-- **Implication**: Understanding these correlations can help focus efforts on improving the quality of movie productions, as this is likely to lead to better overall ratings. 
+### Actionable Insights
 
-### 2. Outliers Detected and Their Possible Implications
-- **Outlier Count**: 116 outliers were identified in the dataset. 
-  - These outliers might represent exceptional cases—either extremely poor or exceptionally good movies.
-  
-- **Implication**: Further analysis could be done to investigate these outliers, as they may provide insights into what characteristics lead to particularly poor or high reviews. Deciding whether to retain or exclude such entries should be based on their relevance to the overall objectives.
+#### 1. Correlations Between Variables
+- **Overall & Quality**: The strong correlation (0.83) between the 'overall' and 'quality' ratings suggests that higher quality ratings contribute significantly to higher overall scores. This insight implies that improving content quality could enhance overall user satisfaction.
+- **Overall & Repeatability**: A moderate correlation (0.51) exists between 'overall' and 'repeatability', suggesting that content that can be revisited or consumed multiple times (like series or franchises) may retain user interest and lead to higher overall ratings.
 
-### 3. Significant Clusters Discovered Through KMeans
-- **Cluster Analysis**: Employing KMeans could reveal clusters of movies that share similar attributes (e.g., quality, repeatability).
-  - For instance, it's possible that one cluster consists of high-quality movies, whereas another might contain those with consistently low ratings.
-  
-- **Implication**: Identifying these groups can inform targeted marketing strategies, allowing the company to promote movies to specific audiences based on their preferences. 
+#### 2. Outliers Detected
+- A total of 116 outliers have been identified within the dataset. Outliers could significantly skew average ratings and perceptions of quality. 
+    - **Implication**: Investigating these outliers can help identify content that might be either severely over- or under-rated compared to peers, leading to targeted marketing strategies or content enhancement.
 
-### 4. Results from Hypothesis Testing
-- If hypothesis tests were conducted on the mean differences across `overall`, `quality`, and `repeatability`, the outcomes may reveal statistically significant differences based on categories such as `language` or `type`.
-  
-- **Implication**: Testing these variables could guide product development, indicating which genres or languages are more likely to produce popular or highly-rated content.
+#### 3. Clusters Discovered Through KMeans
+- The analysis performed using KMeans clustering has potentially identified unique content patterns. Without specific cluster descriptions, we can hypothesize:
+    - **High-Quality Content Cluster**: The cluster with highest ratings (overall, quality) could be leveraged to inform marketing campaigns.
+    - **Low-Quality Content Cluster**: Identifying low-performing content enables strategies for rework or removal to improve overall platform quality.
 
-### 5. Key Findings from Time-Series Decomposition
-- **Time-Series Analysis**: The seasonal component shows variations in ratings across time, which needs to be further studied.
-  - There appears to be potential monthly or yearly cycles where the quality and overall ratings peak or dip.
+#### 4. Hypothesis Testing Results
+- If hypothesis testing was applied to evaluate if the mean ratings for 'overall' differ significantly between languages, the results (if statistically significant) could lead to:
+    - **Target Language Strategy**: Enhancing content offerings in higher-rated languages.
+    - **Localization Efforts**: More investment in localization for lower-rated languages.
+
+#### 5. Time-Series Analysis
+- The 'seasonal' component indicates fluctuations in ratings over time, which could correlate with content releases or genre trends. 
+    - **Implication**: Understanding seasonal patterns could inform better release strategies for new titles, aligning with proven high-traffic periods.
+
+### Recommendations
+
+#### Data Cleaning
+- **Handle Missing Data**: The missing data in 'date' and 'by' columns projects an incomplete view. A thorough review of the missing values should be done. For
 
 ## Visualizations
 
 The following visualizations were created to enhance the understanding of the data and the findings:
-![Visualization](correlation_matrix.png)
+Error analyzing image correlation_matrix.png: 400 Client Error: Bad Request for url: https://aiproxy.sanand.workers.dev/openai/v1/chat/completions![Visualization](correlation_matrix.png)
 
-![Visualization](missing_values.png)
+Error analyzing image missing_values.png: 400 Client Error: Bad Request for url: https://aiproxy.sanand.workers.dev/openai/v1/chat/completions![Visualization](missing_values.png)
 
-![Visualization](outliers.png)
+Error analyzing image outliers.png: 400 Client Error: Bad Request for url: https://aiproxy.sanand.workers.dev/openai/v1/chat/completions![Visualization](outliers.png)
 
-![Visualization](time_series_analysis.png)
+Error analyzing image time_series_analysis.png: 400 Client Error: Bad Request for url: https://aiproxy.sanand.workers.dev/openai/v1/chat/completions![Visualization](time_series_analysis.png)
 
-![Visualization](cluster_analysis.png)
+Error analyzing image cluster_analysis.png: 400 Client Error: Bad Request for url: https://aiproxy.sanand.workers.dev/openai/v1/chat/completions![Visualization](cluster_analysis.png)
 

@@ -37,7 +37,7 @@
 |:-------|:-------------------|:--------------------|:------------------|:-------------------|:-------------------|:----------|:-------------------|:-------------|:----------------------------|:-----------------|:---------------|:----------------|:--------------------|:-------------------|:---------------------|:--------------------------|:------------------|:------------------|:-------------------|:------------------|:------------------|:-----------------------------------------------------------------------------------------|:---------------------------------------------------------------------------------------|
 | count  | 10000.0            | 10000.0             | 10000.0           | 10000.0            | 10000.0            | 9300      | 9415.0             | 10000        | 9979.0                      | 9415             | 10000          | 8916            | 10000.0             | 10000.0            | 10000.0              | 10000.0                   | 10000.0           | 10000.0           | 10000.0            | 10000.0           | 10000.0           | 10000                                                                                    | 10000                                                                                  |
 | unique |                    |                     |                   |                    |                    | 9300      |                    | 4664         |                             | 9274             | 9964           | 25              |                     |                    |                      |                           |                   |                   |                    |                   |                   | 6669                                                                                     | 6669                                                                                   |
-| top    |                    |                     |                   |                    |                    | 439023483 |                    | Stephen King |                             |                  | Selected Poems | eng             |                     |                    |                      |                           |                   |                   |                    |                   |                   | https://s.gr-assets.com/assets/nophoto/book/111x148-bcc042a9c91a29c1d680899eff700a03.png | https://s.gr-assets.com/assets/nophoto/book/50x75-a91bf249278a81aabab721ef782c4a74.png |
+| top    |                    |                     |                   |                    |                    | 375700455 |                    | Stephen King |                             |                  | Selected Poems | eng             |                     |                    |                      |                           |                   |                   |                    |                   |                   | https://s.gr-assets.com/assets/nophoto/book/111x148-bcc042a9c91a29c1d680899eff700a03.png | https://s.gr-assets.com/assets/nophoto/book/50x75-a91bf249278a81aabab721ef782c4a74.png |
 | freq   |                    |                     |                   |                    |                    | 1         |                    | 60           |                             | 5                | 4              | 6341            |                     |                    |                      |                           |                   |                   |                    |                   |                   | 3332                                                                                     | 3332                                                                                   |
 | mean   | 5000.5             | 5264696.5132        | 5471213.5801      | 8646183.4246       | 75.7127            |           | 9755044298883.463  |              | 1981.987674115643           |                  |                |                 | 4.002191000000001   | 54001.2351         | 59687.3216           | 2919.9553                 | 1345.0406         | 3110.885          | 11475.8938         | 19965.6966        | 23789.8056        |                                                                                          |                                                                                        |
 | std    | 2886.8956799071675 | 7575461.863589611   | 7827329.890719961 | 11751060.824080039 | 170.47072765025834 |           | 442861920665.57336 |              | 152.57666516754668          |                  |                |                 | 0.25442748053872905 | 157369.95643554674 | 167803.7852374182    | 6124.378131569911         | 6635.626262783459 | 9717.123578396993 | 28546.449183182456 | 51447.35838380058 | 79768.88561077163 |                                                                                          |                                                                                        |
@@ -84,50 +84,52 @@ The dataset was analyzed using the following techniques:
 
 ## Insights and Implications
 
-Based on the provided analysis of the dataset, here are actionable insights and recommendations drawn from the data. The insights below highlight correlations, outliers, clusters, significant findings, and implications for future exploration and business strategies.
+Based on the detailed analysis of the dataset, here are some actionable insights, findings, and recommendations:
 
-### Insights on Correlations
+### Insights on Correlations Between Variables
 
-1. **Ratings and Average Rating Correlation**:
-   - The `ratings_count` variable shows a high positive correlation with `work_ratings_count` (0.995) and `average_rating` (0.045). This suggests that as the number of ratings increases, the reliability of the average rating also increases.
+1. **Negative Correlation with Ratings Counts**:
+   - There is a notable negative correlation between `books_count`, `ratings_count`, `work_ratings_count`, and `work_text_reviews_count` with the `average_rating`. This indicates that books with a higher number of ratings might generally have lower average ratings. This could suggest that books with a broader audience often receive more critical reviews.
 
-2. **Books Count and Ratings**:
-   - A negative correlation between `books_count` and most rating metrics (particularly `ratings_count` and `average_rating`) implies that books with more editions or reprints may not receive as many ratings or may have lower average ratings. This suggests a crowded marketplace where popular titles overshadow similar works.
+2. **Positive Correlation Among Rating Categories**:
+   - The categories of ratings (`ratings_1`, `ratings_2`, `ratings_3`, `ratings_4`, `ratings_5`) show high positive correlations with one another. This suggests that if a book receives many 5-star ratings, it is likely to receive a high number of other ratings as well.
 
-3. **Publication Year Trends**:
-   - The `original_publication_year` exhibits a slight correlation with higher ratings, suggesting that newer publications may be rated more favorably. This could also indicate that the perception of literature may change over time, with modern writing styles being favored.
+3. **Impact of Publication Year**:
+   - The `original_publication_year` has weak correlations with both total `ratings_count` and `average_rating`. This might suggest that newer publications have yet to accrue enough ratings or that older books remain popular despite a smaller pool of ratings.
 
-### Outliers Detected and Their Implications
+### Outliers Detected
 
-- The dataset contains a total of **470 outliers**. Many outliers were detected in the `ratings_count` and `work_ratings_count`, indicating either exceptionally popular titles or potential data entry errors. 
-  
-***Implications**:
-  - It's crucial to investigate these outliers further to understand their nature. Outliers may represent best-selling books that could provide valuable insight into what influences their popularity and success. Conversely, erroneous data can skew analysis results, so these need to be validated or cleaned.
+The outlier count of 470 indicates that there are specific books that do not adhere to common patterns in the dataset. The implications of these outliers could include:
 
-### Significant Clusters Discovered
+- **Potential Unique Selling Points**: Outliers may represent unique genres or authors that garner different audiences, suggesting potential for targeted marketing or personalized recommendations.
+- **Data Quality Issues**: It's also crucial to validate whether these outliers are due to data entry errors or real phenomena worth further investigation.
 
-- Clustering analysis using KMeans may reveal distinct groups of books based on their attributes, such as average ratings, ratings counts, and publication years.
-  
-***Recommendations**:
-  - Identify clusters of high-performing versus low-performing titles. This can help in targeting marketing strategies effectively, focusing on successful genres or influential authors.
+### Significant Clusters Discovered Through KMeans
 
-### Hypothesis Testing Results
+Clustering results would typically highlight distinct groups of books based on features like ratings, count of reviews, and publication years. While the specific clusters are not mentioned in the analysis results, identifying the characteristics of these clusters can lead to strategic decisions:
 
-- Conducting hypothesis tests on various rating metrics (e.g., average rating comparisons across different language codes) can provide insights into whether certain languages lead to higher reader engagement and satisfaction.
-  
-***Key Findings**:
-  - Statistical significance in average ratings across specific author types (e.g., well-known authors such as Stephen King vs. lesser-known authors). This suggests
+- **Targeted Marketing**: For example, if a cluster includes high-rated, fewer-reviewed contemporary novels, marketing strategies can focus on enhancing visibility among relevant audiences.
+
+### Results From Hypothesis Testing
+
+The results of hypothesis tests will identify if there are statistically significant differences between key variables. For instance:
+
+- Checking if average ratings differ significantly between genres or authors could yield invaluable insights for marketing strategies and inventory management.
+
+### Key Findings from Time-Series Decomposition
+
+The time-series analysis trend reveals almost no significant trends or
 
 ## Visualizations
 
 The following visualizations were created to enhance the understanding of the data and the findings:
-![Visualization](correlation_matrix.png)
+Error analyzing image correlation_matrix.png: 400 Client Error: Bad Request for url: https://aiproxy.sanand.workers.dev/openai/v1/chat/completions![Visualization](correlation_matrix.png)
 
-![Visualization](missing_values.png)
+Error analyzing image missing_values.png: 400 Client Error: Bad Request for url: https://aiproxy.sanand.workers.dev/openai/v1/chat/completions![Visualization](missing_values.png)
 
-![Visualization](outliers.png)
+Error analyzing image outliers.png: 400 Client Error: Bad Request for url: https://aiproxy.sanand.workers.dev/openai/v1/chat/completions![Visualization](outliers.png)
 
-![Visualization](time_series_analysis.png)
+Error analyzing image time_series_analysis.png: 400 Client Error: Bad Request for url: https://aiproxy.sanand.workers.dev/openai/v1/chat/completions![Visualization](time_series_analysis.png)
 
-![Visualization](cluster_analysis.png)
+Error analyzing image cluster_analysis.png: 400 Client Error: Bad Request for url: https://aiproxy.sanand.workers.dev/openai/v1/chat/completions![Visualization](cluster_analysis.png)
 
