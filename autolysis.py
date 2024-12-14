@@ -1,20 +1,22 @@
-# Required Libraries:
-# - matplotlib: For generating visualizations.
-# - seaborn: For advanced statistical visualizations.
-# - pandas: For data manipulation and analysis.
-# - requests: For making API calls to the AI Proxy server.
-# - json: For working with JSON data (part of Python's standard library).
-# - sklearn: For machine learning operations (IsolationForest, KMeans, etc.).
-#   - sklearn.ensemble: For IsolationForest (outlier detection).
-#   - sklearn.cluster: For KMeans clustering.
-#   - sklearn.decomposition: For PCA (optional clustering-related operations).
-#   - sklearn.model_selection: For cross-validation in machine learning tasks.
-# - scipy: For statistical tests (e.g., `ttest_ind`).
-# - statsmodels: For time series analysis (`seasonal_decompose`).
-# - numpy: For numerical operations and preprocessing.
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#   "pandas",              # For data manipulation and analysis.
+#   "matplotlib",          # For generating visualizations.
+#   "seaborn",             # For advanced statistical visualizations.
+#   "requests",            # For making API calls.
+#   "scikit-learn",        # For machine learning operations (IsolationForest, KMeans, etc.).
+#   "scipy",               # For statistical tests (e.g., t-tests).
+#   "statsmodels",         # For time series analysis (e.g., seasonal decomposition).
+#   "numpy",               # For numerical computations and preprocessing.
+#   "tabulate"
+# ]
+# ///
+
 import os
 import sys
 import pandas as pd
+import matplotlib.pyplot as plt
 import seaborn as sns
 import requests
 import json
@@ -133,48 +135,42 @@ def generate_visualizations(df, outliers=None, time_series_result=None, clustere
     try:
         numeric_df = preprocess_dataset(df)
         correlation_matrix = numeric_df.corr()
-        heatmap = sns.heatmap(correlation_matrix, annot=True, cmap="coolwarm", linewidths=0.5)
-        heatmap.set_title("Correlation Matrix of All Numerical Variables")
-        correlation_matrix_path = "correlation_matrix.png"
-        heatmap.get_figure().savefig(correlation_matrix_path)
-        heatmap.get_figure().clf()  # Clear the figure
+        plt.figure(figsize=(12, 10))
+        sns.heatmap(correlation_matrix, annot=True, cmap="coolwarm", linewidths=0.5)
+        correlation_matrix_path = 'correlation_matrix.png'
+        plt.title('Correlation Matrix of All Numerical Variables')
+        plt.savefig(correlation_matrix_path)
+        plt.close()
         visuals.append(correlation_matrix_path)
     except Exception as e:
         print(f"Error generating correlation matrix heatmap: {e}")
 
     # Missing Values Visualization
-    # Missing Values Visualization
     try:
         missing_data = df.isnull().sum()
-        barplot = sns.barplot(
-            x=missing_data.index,
-            y=missing_data.values,
-            hue=missing_data.index,  # Fix for deprecation warning
-            palette="Blues_d",
-            dodge=False,
-            legend=False
-        )
-        barplot.set_title("Missing Values per Column")
-        barplot.set_ylabel("Number of Missing Values")
-        barplot.set_xticks(range(len(missing_data.index)))  # Explicitly set ticks
-        barplot.set_xticklabels(missing_data.index, rotation=45, horizontalalignment='right')  # Fix for tick warning
-        barplot.get_figure().savefig("missing_values.png")
-        barplot.get_figure().clf()  # Clear the figure
-        visuals.append("missing_values.png")
+        plt.figure(figsize=(12, 6))
+        missing_data.plot(kind='bar', color='skyblue')
+        plt.title('Missing Values per Column')
+        plt.ylabel('Number of Missing Values')
+        missing_values_path = 'missing_values.png'
+        plt.savefig(missing_values_path)
+        plt.close()
+        visuals.append(missing_values_path)
     except Exception as e:
         print(f"Error generating missing values bar chart: {e}")
-
 
     # Outliers Visualization (if detected)
     if outliers is not None:
         try:
-            scatter = sns.scatterplot(x=outliers.index, y=outliers.iloc[:, 0], color="red", label="Outliers")
-            scatter.set_title("Detected Outliers")
-            scatter.set_xlabel("Index")
-            scatter.set_ylabel("Values")
-            outliers_path = "outliers.png"
-            scatter.get_figure().savefig(outliers_path)
-            scatter.get_figure().clf()  # Clear the figure
+            plt.figure(figsize=(12, 6))
+            plt.scatter(outliers.index, outliers.iloc[:, 0], color='red', label='Outliers')  # Ensure matching sizes
+            plt.title('Detected Outliers')
+            plt.xlabel('Index')
+            plt.ylabel('Values')
+            outliers_path = 'outliers.png'
+            plt.legend()
+            plt.savefig(outliers_path)
+            plt.close()
             visuals.append(outliers_path)
         except Exception as e:
             print(f"Error generating outliers scatter plot: {e}")
@@ -182,15 +178,17 @@ def generate_visualizations(df, outliers=None, time_series_result=None, clustere
     # Time Series Analysis (if performed)
     if time_series_result is not None:
         try:
-            trend = sns.lineplot(data=time_series_result['trend'], label="Trend", color="blue")
-            seasonal = sns.lineplot(data=time_series_result['seasonal'], label="Seasonal", color="orange")
-            residual = sns.lineplot(data=time_series_result['residual'], label="Residual", color="green")
-            trend.set_title("Time Series Decomposition")
-            trend.set_xlabel("Time")
-            trend.set_ylabel("Values")
-            time_series_path = "time_series_analysis.png"
-            trend.get_figure().savefig(time_series_path)
-            trend.get_figure().clf()  # Clear the figure
+            plt.figure(figsize=(12, 6))
+            plt.plot(time_series_result['trend'], label='Trend', color='blue')
+            plt.plot(time_series_result['seasonal'], label='Seasonal', color='orange')
+            plt.plot(time_series_result['residual'], label='Residual', color='green')
+            plt.title('Time Series Decomposition')
+            plt.xlabel('Time')
+            plt.ylabel('Values')
+            time_series_path = 'time_series_analysis.png'
+            plt.legend()
+            plt.savefig(time_series_path)
+            plt.close()
             visuals.append(time_series_path)
         except Exception as e:
             print(f"Error generating time series analysis plot: {e}")
@@ -198,19 +196,15 @@ def generate_visualizations(df, outliers=None, time_series_result=None, clustere
     # Cluster Analysis Visualization
     if clustered_df is not None:
         try:
-            cluster_plot = sns.scatterplot(
-                x=clustered_df.iloc[:, 0],
-                y=clustered_df.iloc[:, 1],
-                hue=clustered_df['cluster'],
-                palette="viridis",
-                s=100
-            )
-            cluster_plot.set_title("Clustering Results")
-            cluster_plot.set_xlabel(clustered_df.columns[0])
-            cluster_plot.set_ylabel(clustered_df.columns[1])
-            cluster_path = "cluster_analysis.png"
-            cluster_plot.get_figure().savefig(cluster_path)
-            cluster_plot.get_figure().clf()  # Clear the figure
+            plt.figure(figsize=(12, 6))
+            sns.scatterplot(x=clustered_df.iloc[:, 0], y=clustered_df.iloc[:, 1], hue=clustered_df['cluster'], palette='viridis', s=100)
+            plt.title('Clustering Results')
+            plt.xlabel(clustered_df.columns[0])
+            plt.ylabel(clustered_df.columns[1])
+            cluster_path = 'cluster_analysis.png'
+            plt.legend()
+            plt.savefig(cluster_path)
+            plt.close()
             visuals.append(cluster_path)
         except Exception as e:
             print(f"Error generating clustering plot: {e}")
